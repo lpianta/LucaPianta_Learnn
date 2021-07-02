@@ -53,8 +53,8 @@ class Game():
         computer = self.computer_input()
         result = self.compare_choices(
             player, computer)
-
-        return result
+        #print(player, computer)
+        return result, player, computer
 
 
 class RockPaperScissors(tk.Tk):
@@ -85,11 +85,15 @@ class RockPaperScissors(tk.Tk):
         frame = self.frames[controller]
         frame.tkraise()
 
+    def access_page(self, page):
+        return self.frames[page]
+
 
 class StartPage(tk.Frame):
 
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
+        self.controller = controller
         label = tk.Label(self, text="Rock Paper Scissor", font=LARGE_FONT)
         label.pack(pady=10, padx=10)
 
@@ -110,7 +114,10 @@ class PlayerVsComputer(tk.Frame):
 
     def __init__(self, parent, controller):
         game = Game()
+        self.controller = controller
         self.result = ["result"]
+        self.player_choice = tk.StringVar()
+        self.computer_choice = tk.StringVar()
 
         tk.Frame.__init__(self, parent)
         label = tk.Label(self, text="Player VS computer", font=LARGE_FONT)
@@ -143,8 +150,11 @@ class PlayerVsComputer(tk.Frame):
         """
         Handle the result of player's choice
         """
+        game = Game()
         value = function(*args)
-        self.result[0] = value
+        self.result[0] = value[0]
+        self.player_choice.set(value[1])
+        self.computer_choice.set(value[2])
 
         if self.result[0] == "computerwin":
             app.show_frame(ComputerWins)
@@ -152,11 +162,20 @@ class PlayerVsComputer(tk.Frame):
             app.show_frame(PlayerWins)
         else:
             app.show_frame(Tie)
+        print(self.player_choice, self.computer_choice)
+        return self.player_choice, self.computer_choice
 
 
 class ComputerWins(tk.Frame):
 
     def __init__(self, parent, controller):
+        self.controller = controller
+
+        game = Game()
+
+        choices = self.controller.access_page(PlayerVsComputer)
+        player_choice = choices.player_choice
+        computer_choice = choices.computer_choice
 
         tk.Frame.__init__(self, parent)
         label = tk.Label(
@@ -172,11 +191,15 @@ class ComputerWins(tk.Frame):
         startpage_btn = tk.Button(self, text="Back to start page",
                                   command=lambda: controller.show_frame(StartPage))
         startpage_btn.pack(pady=10)
+        choices_lbl = tk.Label(
+            self, textvariable=player_choice)
+        choices_lbl.pack()
 
 
 class PlayerWins(tk.Frame):
 
     def __init__(self, parent, controller):
+        self.controller = controller
         tk.Frame.__init__(self, parent)
         label = tk.Label(
             self, text="You Won!", font=LARGE_FONT)
@@ -195,6 +218,7 @@ class PlayerWins(tk.Frame):
 class Tie(tk.Frame):
 
     def __init__(self, parent, controller):
+        self.controller = controller
         tk.Frame.__init__(self, parent)
         label = tk.Label(
             self, text="It's a Tie!", font=LARGE_FONT)
@@ -218,6 +242,7 @@ class Tie(tk.Frame):
 class ComputerVsComputer(tk.Frame):
 
     def __init__(self, parent, controller):
+        self.controller = controller
         tk.Frame.__init__(self, parent)
         label = tk.Label(
             self, text="Computer VS computer", font=LARGE_FONT)
