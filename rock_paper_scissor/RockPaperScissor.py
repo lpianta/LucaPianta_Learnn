@@ -11,6 +11,8 @@ player_img = "imgs/player.png"
 computer_img = "imgs/robot.png"
 win_player_img = "imgs/player_biceps.png"
 win_computer_img = "imgs/robot_biceps.png"
+computer1_img = "imgs/computer1.png"
+computer2_img = "imgs/computer2.png"
 
 
 class Game():
@@ -441,6 +443,7 @@ class ComputerVsComputer(tk.Frame):
         comp1_score_vl = tk.Label(self, textvariable=computer1_score)
         comp2_score_lbl = tk.Label(self, text="Computer 2 Score: ")
         comp2_score_vl = tk.Label(self, textvariable=computer2_score)
+        winner_img = tk.Label(self, image=self.computer_img)
 
         # Define buttons
         again_btn = tk.Button(
@@ -459,6 +462,7 @@ class ComputerVsComputer(tk.Frame):
         comp1_score_vl.grid(row=4, column=2)
         comp2_score_lbl.grid(row=5, column=1)
         comp2_score_vl.grid(row=5, column=2)
+        winner_img.grid(row=8, columnspan=5)
         again_btn.grid(row=6, columnspan=5, pady=10)
         startpage_btn.grid(row=7, columnspan=5)
 
