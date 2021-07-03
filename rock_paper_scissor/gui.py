@@ -7,9 +7,9 @@ LARGE_FONT = ("Verdana", 12)
 rock_img = "imgs/rock.png"
 paper_img = "imgs/paper.png"
 scissors_img = "imgs/scissor.png"
-human_img = "imgs/human.png"
+player_img = "imgs/player.png"
 computer_img = "imgs/robot.png"
-win_human_img = "imgs/human_biceps.png"
+win_player_img = "imgs/player_biceps.png"
 win_computer_img = "imgs/robot_biceps.png"
 
 
@@ -58,7 +58,6 @@ class Game():
         computer1 = self.computer_input()
         computer2 = self.computer_input()
         result = self.compare_choices(computer1, computer2)
-        print(result, computer1, computer2)
         return result, computer1, computer2
 
 
@@ -98,21 +97,46 @@ class StartPage(tk.Frame):
 
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
+        game = Game()
         self.controller = controller
-        label = tk.Label(self, text="Rock Paper Scissor", font=LARGE_FONT)
-        label.pack(pady=10, padx=10)
+        self.result = tk.StringVar()
+        self.computer1_choice = tk.StringVar()
+        self.computer2_choice = tk.StringVar()
+        self.computer1_score = tk.IntVar()
+        self.computer2_score = tk.IntVar()
 
-        self.human_img = tk.PhotoImage(file=human_img)
+        self.player_img = tk.PhotoImage(file=player_img)
         self.computer_img = tk.PhotoImage(file=computer_img)
 
-        player_computer_btn = tk.Button(
-            self, text="       Play against your computer       ", image=self.human_img, command=lambda: controller.show_frame(PlayerVsComputer), compound="bottom")
+        title = tk.Label(self, text="Rock Paper Scissor", font=LARGE_FONT)
 
-        player_computer_btn.pack(side="left")
+        player_computer_btn = tk.Button(
+            self, text="       Play against your computer       ", image=self.player_img, command=lambda: controller.show_frame(PlayerVsComputer), compound="bottom")
 
         computer_computer_btn = tk.Button(self, text="Watch your computer play against himself", image=self.computer_img,
-                                          command=lambda: controller.show_frame(ComputerVsComputer), compound="bottom")
+                                          command=lambda: self.computer_game(game.computer_play), compound="bottom")
+        title.pack(pady=10, padx=10)
+        player_computer_btn.pack(side="left")
         computer_computer_btn.pack(side="left")
+
+    def computer_game(self, function, *args):
+        value = function(*args)
+
+        if value[0] == "playerwin":
+            self.result.set("Computer 1 Won!")
+            self.computer1_score.set(self.computer1_score.get() + 1)
+
+        elif value[0] == "computerwin":
+            self.result.set("Computer 2 Won!")
+            self.computer2_score.set(self.computer2_score.get() + 1)
+
+        elif value[0] == "tie":
+            self.result.set("It's a tie!")
+        self.computer1_choice.set(value[1])
+        self.computer2_choice.set(value[2])
+        app.show_frame(ComputerVsComputer)
+
+        return self.result, self.computer1_choice, self.computer2_choice
 
 
 class PlayerVsComputer(tk.Frame):
@@ -126,13 +150,16 @@ class PlayerVsComputer(tk.Frame):
         self.player_score = tk.IntVar()
         self.computer_score = tk.IntVar()
 
-        tk.Frame.__init__(self, parent)
-        label = tk.Label(self, text="Player VS computer", font=LARGE_FONT)
-        label.grid(columnspan=5)
-
         self.rock_img = tk.PhotoImage(file=rock_img)
         self.paper_img = tk.PhotoImage(file=paper_img)
         self.scissors_img = tk.PhotoImage(file=scissors_img)
+
+        tk.Frame.__init__(self, parent)
+        title = tk.Label(self, text="Player VS computer", font=LARGE_FONT)
+        player_score_lbl = tk.Label(self, text="Your score: ")
+        player_score_vl = tk.Label(self, textvariable=self.player_score)
+        computer_score_lbl = tk.Label(self, text="Computer score: ")
+        computer_score_vl = tk.Label(self, textvariable=self.computer_score)
 
         rock_btn = tk.Button(self, text="Rock!",
                              image=self.rock_img, compound="bottom", command=lambda: self.button_press(game.play, "rock"))
@@ -143,22 +170,17 @@ class PlayerVsComputer(tk.Frame):
         scissors_btn = tk.Button(
             self, text="Scissors!", image=self.scissors_img, compound="bottom", command=lambda: self.button_press(game.play, "scissor"))
 
+        startpage_btn = tk.Button(self, text="Back to start page",
+                                  command=lambda: [controller.show_frame(StartPage), self.player_score.set(0), self.computer_score.set(0)])
+
+        title.grid(columnspan=5)
         rock_btn.grid(row=1, column=1)
         paper_btn.grid(row=1, column=2)
         scissors_btn.grid(row=1, column=3)
-
-        player_score_lbl = tk.Label(self, text="Your score: ")
-        player_score_vl = tk.Label(self, textvariable=self.player_score)
         player_score_lbl.grid(columnspan=5)
         player_score_vl.grid(columnspan=5)
-
-        computer_score_lbl = tk.Label(self, text="Computer score: ")
-        computer_score_vl = tk.Label(self, textvariable=self.computer_score)
         computer_score_lbl.grid(columnspan=5)
         computer_score_vl.grid(columnspan=5)
-
-        startpage_btn = tk.Button(self, text="Back to start page",
-                                  command=lambda: [controller.show_frame(StartPage), self.player_score.set(0), self.computer_score.set(0)])
         startpage_btn.grid(columnspan=5)
 
         self.grid_columnconfigure((0, 4), weight=1)
@@ -167,7 +189,7 @@ class PlayerVsComputer(tk.Frame):
         """
         Handle the result of player's choice
         """
-        game = Game()
+
         value = function(*args)
         self.result[0] = value[0]
         self.player_choice.set(value[1])
@@ -192,7 +214,7 @@ class ComputerWins(tk.Frame):
     def __init__(self, parent, controller):
         self.controller = controller
 
-        game = Game()
+        # game = Game()
 
         choices = self.controller.access_page(PlayerVsComputer)
         player_choice = choices.player_choice
@@ -201,43 +223,48 @@ class ComputerWins(tk.Frame):
         self.computer_score = choices.computer_score
 
         tk.Frame.__init__(self, parent)
-        label1 = tk.Label(self, text="You Played: ")
-        label1.grid(row=0, column=1, pady=10)
-        choices1_lbl = tk.Label(
-            self, textvariable=player_choice)
-        choices1_lbl.grid(row=0, column=2, pady=10)
-
-        label2 = tk.Label(self, text="Computer Played: ")
-        label2.grid(row=1, column=1, pady=10)
-        choices2_lbl = tk.Label(
-            self, textvariable=computer_choice)
-        choices2_lbl.grid(row=1, column=2, pady=10)
-
-        label = tk.Label(
-            self, text="Computer Won!", font=LARGE_FONT)
-        label.grid(row=2, columnspan=5, pady=10, padx=10)
 
         self.computer_win_img = tk.PhotoImage(
             file=win_computer_img).subsample(2, 2)
+
+        player_played_lbl = tk.Label(self, text="You Played: ")
+
+        player_choice_lbl = tk.Label(
+            self, textvariable=player_choice)
+
+        comp_played_lbl = tk.Label(self, text="Computer Played: ")
+
+        comp_choice_lbl = tk.Label(
+            self, textvariable=computer_choice)
+
+        winner_lbl = tk.Label(
+            self, text="Computer Won!", font=LARGE_FONT)
+
         computer_arm = tk.Label(self, image=self.computer_win_img)
-        computer_arm.grid(row=3, columnspan=5, pady=10)
 
         player_score_lbl = tk.Label(self, text="Your score: ")
         player_score_vl = tk.Label(self, textvariable=self.player_score)
-        player_score_lbl.grid(row=4, columnspan=5)
-        player_score_vl.grid(row=5, columnspan=5)
 
         computer_score_lbl = tk.Label(self, text="Computer score: ")
         computer_score_vl = tk.Label(self, textvariable=self.computer_score)
-        computer_score_lbl.grid(row=6, columnspan=5)
-        computer_score_vl.grid(row=7, columnspan=5)
 
         again_btn = tk.Button(
             self, text="Play Again", command=lambda: controller.show_frame(PlayerVsComputer))
-        again_btn.grid(row=8, columnspan=5, pady=10)
 
         startpage_btn = tk.Button(self, text="Back to start page",
                                   command=lambda: [controller.show_frame(StartPage), self.player_score.set(0), self.computer_score.set(0)])
+
+        player_played_lbl.grid(row=0, column=1, pady=10)
+        player_choice_lbl.grid(row=0, column=2, pady=10)
+        comp_played_lbl.grid(row=1, column=1, pady=10)
+        comp_choice_lbl.grid(row=1, column=2, pady=10)
+        winner_lbl.grid(row=2, columnspan=5, pady=10, padx=10)
+        computer_arm.grid(row=3, columnspan=5, pady=10)
+        player_score_lbl.grid(row=4, columnspan=5)
+        player_score_vl.grid(row=5, columnspan=5)
+        computer_score_lbl.grid(row=6, columnspan=5)
+        computer_score_vl.grid(row=7, columnspan=5)
+        again_btn.grid(row=8, columnspan=5, pady=10)
         startpage_btn.grid(row=9, columnspan=5, pady=10)
 
         self.grid_columnconfigure((0, 4), weight=1)
@@ -246,10 +273,8 @@ class ComputerWins(tk.Frame):
 class PlayerWins(tk.Frame):
 
     def __init__(self, parent, controller):
-        self.controller = controller
         tk.Frame.__init__(self, parent)
-
-        game = Game()
+        self.controller = controller
 
         choices = self.controller.access_page(PlayerVsComputer)
         player_choice = choices.player_choice
@@ -257,42 +282,46 @@ class PlayerWins(tk.Frame):
         self.player_score = choices.player_score
         self.computer_score = choices.computer_score
 
-        tk.Frame.__init__(self, parent)
-        label1 = tk.Label(self, text="You Played: ")
-        label1.grid(row=0, column=1, pady=10)
-        choices1_lbl = tk.Label(
+        self.player_win_img = tk.PhotoImage(file=win_player_img)
+
+        player_played_lbl = tk.Label(self, text="You Played: ")
+
+        player_choice_lbl = tk.Label(
             self, textvariable=player_choice)
-        choices1_lbl.grid(row=0, column=2, pady=10)
 
-        label2 = tk.Label(self, text="Computer Played: ")
-        label2.grid(row=1, column=1, pady=10)
-        choices2_lbl = tk.Label(
+        comp_played_lbl = tk.Label(self, text="Computer Played: ")
+
+        comp_choice_lbl = tk.Label(
             self, textvariable=computer_choice)
-        choices2_lbl.grid(row=1, column=2, pady=10)
 
-        label = tk.Label(
+        winner_lbl = tk.Label(
             self, text="You Won!", font=LARGE_FONT)
-        label.grid(row=2, columnspan=5, pady=10, padx=10)
-        self.player_win_img = tk.PhotoImage(file=win_human_img)
+
         player_arm = tk.Label(self, image=self.player_win_img)
-        player_arm.grid(row=3, columnspan=5, pady=10)
 
         player_score_lbl = tk.Label(self, text="Your score: ")
         player_score_vl = tk.Label(self, textvariable=self.player_score)
-        player_score_lbl.grid(row=4, columnspan=5)
-        player_score_vl.grid(row=5, columnspan=5)
 
         computer_score_lbl = tk.Label(self, text="Computer score: ")
         computer_score_vl = tk.Label(self, textvariable=self.computer_score)
-        computer_score_lbl.grid(row=6, columnspan=5)
-        computer_score_vl.grid(row=7, columnspan=5)
 
         again_btn = tk.Button(
             self, text="Play Again", command=lambda: controller.show_frame(PlayerVsComputer))
-        again_btn.grid(row=8, columnspan=5, pady=10)
 
         startpage_btn = tk.Button(self, text="Back to start page",
                                   command=lambda: [controller.show_frame(StartPage), self.player_score.set(0), self.computer_score.set(0)])
+
+        player_played_lbl.grid(row=0, column=1, pady=10)
+        player_choice_lbl.grid(row=0, column=2, pady=10)
+        comp_played_lbl.grid(row=1, column=1, pady=10)
+        comp_choice_lbl.grid(row=1, column=2, pady=10)
+        winner_lbl.grid(row=2, columnspan=5, pady=10, padx=10)
+        player_arm.grid(row=3, columnspan=5, pady=10)
+        player_score_lbl.grid(row=4, columnspan=5)
+        player_score_vl.grid(row=5, columnspan=5)
+        computer_score_lbl.grid(row=6, columnspan=5)
+        computer_score_vl.grid(row=7, columnspan=5)
+        again_btn.grid(row=8, columnspan=5, pady=10)
         startpage_btn.grid(row=9, columnspan=5, pady=10)
 
         self.grid_columnconfigure((0, 4), weight=1)
@@ -301,10 +330,10 @@ class PlayerWins(tk.Frame):
 class Tie(tk.Frame):
 
     def __init__(self, parent, controller):
-        self.controller = controller
         tk.Frame.__init__(self, parent)
+        self.controller = controller
 
-        game = Game()
+        #game = Game()
 
         choices = self.controller.access_page(PlayerVsComputer)
         player_choice = choices.player_choice
@@ -312,46 +341,51 @@ class Tie(tk.Frame):
         self.player_score = choices.player_score
         self.computer_score = choices.computer_score
 
-        tk.Frame.__init__(self, parent)
-        label1 = tk.Label(self, text="You Played: ")
-        label1.grid(row=0, column=1, pady=10)
-        choices1_lbl = tk.Label(
-            self, textvariable=player_choice)
-        choices1_lbl.grid(row=0, column=2, pady=10)
-
-        label2 = tk.Label(self, text="Computer Played: ")
-        label2.grid(row=1, column=1, pady=10)
-        choices2_lbl = tk.Label(
-            self, textvariable=computer_choice)
-        choices2_lbl.grid(row=1, column=2, pady=10)
-
-        label = tk.Label(
-            self, text="It's a Tie!", font=LARGE_FONT)
-        label.grid(row=2, columnspan=5)
         self.computer_win_img = tk.PhotoImage(
             file=win_computer_img).subsample(2, 2)
+        self.player_win_img = tk.PhotoImage(file=win_player_img)
+
+        player_played_lbl = tk.Label(self, text="You Played: ")
+
+        player_choice_lbl = tk.Label(
+            self, textvariable=player_choice)
+
+        comp_played_lbl = tk.Label(self, text="Computer Played: ")
+
+        comp_choice_lbl = tk.Label(
+            self, textvariable=computer_choice)
+
+        winner_lbl = tk.Label(
+            self, text="It's a Tie!", font=LARGE_FONT)
+
         computer_arm = tk.Label(self, image=self.computer_win_img)
-        computer_arm.grid(row=3, column=1, pady=10, padx=40)
-        self.player_win_img = tk.PhotoImage(file=win_human_img)
+
         player_arm = tk.Label(self, image=self.player_win_img)
-        player_arm.grid(row=3, column=2, pady=10, padx=40)
 
         player_score_lbl = tk.Label(self, text="Your score: ")
         player_score_vl = tk.Label(self, textvariable=self.player_score)
-        player_score_lbl.grid(row=4, columnspan=5)
-        player_score_vl.grid(row=5, columnspan=5)
 
         computer_score_lbl = tk.Label(self, text="Computer score: ")
         computer_score_vl = tk.Label(self, textvariable=self.computer_score)
-        computer_score_lbl.grid(row=6, columnspan=5)
-        computer_score_vl.grid(row=7, columnspan=5)
 
         again_btn = tk.Button(
             self, text="Play Again", command=lambda: controller.show_frame(PlayerVsComputer))
-        again_btn.grid(row=8, columnspan=5, pady=10)
 
         startpage_btn = tk.Button(self, text="Back to start page",
                                   command=lambda: [controller.show_frame(StartPage), self.player_score.set(0), self.computer_score.set(0)])
+
+        player_played_lbl.grid(row=0, column=1, pady=10)
+        player_choice_lbl.grid(row=0, column=2, pady=10)
+        comp_played_lbl.grid(row=1, column=1, pady=10)
+        comp_choice_lbl.grid(row=1, column=2, pady=10)
+        winner_lbl.grid(row=2, columnspan=5)
+        computer_arm.grid(row=3, column=1, pady=10, padx=40)
+        player_arm.grid(row=3, column=2, pady=10, padx=40)
+        player_score_lbl.grid(row=4, columnspan=5)
+        player_score_vl.grid(row=5, columnspan=5)
+        computer_score_lbl.grid(row=6, columnspan=5)
+        computer_score_vl.grid(row=7, columnspan=5)
+        again_btn.grid(row=8, columnspan=5, pady=10)
         startpage_btn.grid(row=9, columnspan=5, pady=10)
 
         self.grid_columnconfigure((0, 4), weight=1)
@@ -360,30 +394,50 @@ class Tie(tk.Frame):
 class ComputerVsComputer(tk.Frame):
 
     def __init__(self, parent, controller):
-        self.controller = controller
         tk.Frame.__init__(self, parent)
+        self.controller = controller
 
         game = Game()
+        choices = self.controller.access_page(StartPage)
+        result = choices.result
 
-        result, computer1, computer2 = game.computer_play()
+        computer1_choice = choices.computer1_choice
+        computer2_choice = choices.computer2_choice
+        computer1_score = choices.computer1_score
+        computer2_score = choices.computer2_score
 
-        label = tk.Label(
+        title = tk.Label(
             self, text="Computer VS computer", font=LARGE_FONT)
-        label.pack(pady=10, padx=10)
+        title.grid(columnspan=5, pady=10, padx=10)
 
-        if result == "playerwin":
-            label1 = tk.Label(self, text="Computer1 Won")
-            label.pack()
-        elif result == "computerwin":
-            label2 = tk.Label(self, text="Computer2 Won")
-            label.pack()
-        else:
-            label3 = tk.Label(self, text="Tie")
-            label3.pack()
+        match_result_lbl = tk.Label(self, textvar=result, font=LARGE_FONT)
+        comp1_played_lbl = tk.Label(self, text="Computer 1 played: ")
+        comp1_choice_lbl = tk.Label(self, textvariable=computer1_choice)
+        comp2_played_lbl = tk.Label(self, text="Computer 2 played: ")
+        comp2_choice_lbl = tk.Label(self, textvariable=computer2_choice)
+        comp1_score_lbl = tk.Label(self, text="Computer 1 Score: ")
+        comp1_score_vl = tk.Label(self, textvariable=computer1_score)
+        comp2_score_lbl = tk.Label(self, text="Computer 2 Score: ")
+        comp2_score_vl = tk.Label(self, textvariable=computer2_score)
+        match_result_lbl.grid(row=1, columnspan=5)
+        comp1_played_lbl.grid(row=2, column=1)
+        comp1_choice_lbl.grid(row=2, column=2)
+        comp2_played_lbl.grid(row=3, column=1)
+        comp2_choice_lbl.grid(row=3, column=2)
+        comp1_score_lbl.grid(row=4, column=1)
+        comp1_score_vl.grid(row=4, column=2)
+        comp2_score_lbl.grid(row=5, column=1)
+        comp2_score_vl.grid(row=5, column=2)
+
+        again_btn = tk.Button(
+            self, text="Play Again", command=lambda: [controller.show_frame(ComputerVsComputer), controller.access_page(StartPage).computer_game(game.computer_play)])
+        again_btn.grid(row=6, columnspan=5, pady=10)
 
         startpage_btn = tk.Button(self, text="Back to start page",
-                                  command=lambda: controller.show_frame(StartPage))
-        startpage_btn.pack()
+                                  command=lambda: [controller.show_frame(StartPage), computer1_score.set(0), computer2_score.set(0)])
+        startpage_btn.grid(row=7, columnspan=5)
+
+        self.grid_columnconfigure((0, 4), weight=1)
 
 
 if __name__ == "__main__":
