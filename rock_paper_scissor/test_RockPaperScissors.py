@@ -1,6 +1,6 @@
 import pytest
 import itertools
-from RockPaperScissor import Game
+from RockPaperScissors import Game
 
 game = Game()
 choices = game.choices
